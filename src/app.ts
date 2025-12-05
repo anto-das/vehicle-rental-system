@@ -1,8 +1,9 @@
 import express, { Request, Response } from "express";
 import { initDB } from "./config/db";
-import { VehicleRouter } from "./modules/vehicles/vehicles.routes";
-import { AuthRouter } from "./modules/authentication/auth.routes";
-import { UserRouter } from "./modules/users/users.routes";
+import { vehicleRouter } from "./modules/vehicles/vehicles.routes";
+import { authRouter } from "./modules/authentication/auth.routes";
+import { userRouter } from "./modules/users/users.routes";
+import { bookingRouter } from "./modules/bookings/booking.routes";
 export const app = express();
 
 // middle ware
@@ -10,11 +11,13 @@ app.use(express.json());
 
 initDB();
 
-app.use("/v1/auth",AuthRouter)
+app.use("/v1/auth",authRouter);
 
-app.use("/v1/users",UserRouter)
+app.use("/v1/users",userRouter);
 
-app.use("/v1/vehicles",VehicleRouter)
+app.use("/v1/vehicles",vehicleRouter);
+
+app.use("/v1/bookings",bookingRouter)
 
 app.get("/", (req: Request, res: Response) => {
   res.send("vehicle rental platform");
