@@ -13,9 +13,20 @@ const getSingleUser = async (id: string) => {
 
 const updateUser = async (payload: Record<string, unknown>, id: string) => {
   const { name, email, phone, role } = payload;
-  let idx = 1;
+  const user = await getSingleUser(id);
+   let idx = 1;
   const values = [];
   const fields: string[] = [];
+  //user found check
+  if(user.rows.length ===0){
+    return user;
+  }
+  const getUser = user.rows[0];
+  const isAdmin = getUser.role ==="admin";
+  const isCustomer = getUser.role ==="customer" && getUser.id===id;
+  if(!isAdmin && isCustomer){
+    return null;
+  }
 
   if (name !== undefined) {
     fields.push(`name=$${idx++}`);
@@ -29,20 +40,13 @@ const updateUser = async (payload: Record<string, unknown>, id: string) => {
     fields.push(`phone=$${idx++}`);
     values.push(phone);
   }
-
-  const user = await getSingleUser(id);
-  const userRole = user.rows[0]?.role;
-  if (role !== undefined) {
-    fields.push(`role=$${idx++}`);
-  }
-  if (userRole !== "admin") {
-    values.push(userRole);
-  } else {
-    values.push(role);
+  if(role !== undefined && isAdmin){
+    fields.push(`role=$${idx++}`)
+    values.push(role)
   }
   values.push(id);
   const result = await pool.query(
-    `UPDATE users SET ${fields.join()} WHERE id=$${idx} RETURNING *`,
+    `UPDATE users SET ${fields.join(", ")} WHERE id=$${idx} RETURNING *`,
     values
   );
   return result;

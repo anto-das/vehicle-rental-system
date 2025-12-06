@@ -41,7 +41,7 @@ const getSingleVehicle = async (req: Request, res: Response) => {
     if (result.rows.length === 0) {
       res.send({
         success: false,
-        message: "user not found",
+        message: "vehicle not found",
       });
     } else {
       res.status(200).send({
@@ -65,7 +65,7 @@ const updateVehicle = async (req: Request, res: Response) => {
     if (result.rowCount === 0) {
       res.status(404).send({
         success: false,
-        message: "user not found",
+        message: "vehicle not found",
       });
     } else {
       res.status(201).send({
@@ -94,7 +94,7 @@ const deleteVehicle = async (req: Request, res: Response) => {
     }else if (result.rowCount === 0) {
       res.status(404).send({
         success: false,
-        message: "user not found",
+        message: "vehicle not found",
       });
     } else {
       res.status(200).send({

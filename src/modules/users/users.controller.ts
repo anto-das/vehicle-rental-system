@@ -20,8 +20,20 @@ const getAllUser = async (req: Request, res: Response) => {
 const updateUser = async (req: Request, res: Response) => {
   const id = req.params.id;
   try {
+    if (String(req.user?.id) !== id) {
+      res.status(403).send({
+        success: false,
+        message: "you can't access others info",
+      });
+      return;
+    }
     const result = await userService.updateUser(req.body, id as string);
-    if (result.rowCount === 0) {
+    if (result === null) {
+      res.status(401).send({
+        success: false,
+        message: "unauthorized access",
+      });
+    } else if (result.rowCount === 0) {
       res.status(404).send({
         success: false,
         message: "user not found",
