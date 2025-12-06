@@ -31,33 +31,39 @@ const getSingleVehicle = async (id: string) => {
   return result;
 };
 
-const updateVehicle = async (payload:Record<string,unknown>,id:string) => {
-  const {vehicle_name,type,registration_number,daily_rent_price,availability_status} = payload;
-   let idx = 1;
-    const values = [];
-    const fields:string[] = [];
+const updateVehicle = async (payload: Record<string, unknown>, id: string) => {
+  const {
+    vehicle_name,
+    type,
+    registration_number,
+    daily_rent_price,
+    availability_status,
+  } = payload;
+  let idx = 1;
+  const values = [];
+  const fields: string[] = [];
 
-    if(vehicle_name !== undefined){
-        fields.push(`vehicle_name=$${idx++}`);
-        values.push(vehicle_name);
-    }
-    if(type !== undefined){
-        fields.push(`type=$${idx++}`);
-        values.push(type)
-    }
-    if(registration_number !== undefined){
-        fields.push(`registration_number=$${idx++}`);
-        values.push(registration_number)
-    }
-    if(daily_rent_price !== undefined){
-        fields.push(`daily_rent_price=$${idx++}`);
-        values.push(daily_rent_price)
-    }
-    if(availability_status !== undefined){
-        fields.push(`availability_status=$${idx++}`);
-        values.push(availability_status)
-    }
-    values.push(id)
+  if (vehicle_name !== undefined) {
+    fields.push(`vehicle_name=$${idx++}`);
+    values.push(vehicle_name);
+  }
+  if (type !== undefined) {
+    fields.push(`type=$${idx++}`);
+    values.push(type);
+  }
+  if (registration_number !== undefined) {
+    fields.push(`registration_number=$${idx++}`);
+    values.push(registration_number);
+  }
+  if (daily_rent_price !== undefined) {
+    fields.push(`daily_rent_price=$${idx++}`);
+    values.push(daily_rent_price);
+  }
+  if (availability_status !== undefined) {
+    fields.push(`availability_status=$${idx++}`);
+    values.push(availability_status);
+  }
+  values.push(id);
   const result = await pool.query(
     `UPDATE vehicles SET ${fields.join()} WHERE id=$${idx} RETURNING *`,
     values
@@ -65,15 +71,23 @@ const updateVehicle = async (payload:Record<string,unknown>,id:string) => {
   return result;
 };
 
-const deleteVehicle = async(id:string) =>{
-  const result = await pool.query(`DELETE FROM vehicles WHERE id=$1`,[id]);
-  return result
-}
+const deleteVehicle = async (id: string) => {
+  const vehicle = await getSingleVehicle(id);
+  if (vehicle.rows.length === 0) {
+    return vehicle;
+  }
+  const status = vehicle.rows[0]?.availability_status;
+  if (status === "booked") {
+    return null;
+  }
+  const result = await pool.query(`DELETE FROM vehicles WHERE id=$1`, [id]);
+  return result;
+};
 
 export const vehicleService = {
   postVehicle,
   getVehicles,
   getSingleVehicle,
   updateVehicle,
-  deleteVehicle
+  deleteVehicle,
 };

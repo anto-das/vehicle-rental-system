@@ -37,7 +37,7 @@ const getVehicles = async (req: Request, res: Response) => {
 const getSingleVehicle = async (req: Request, res: Response) => {
   const id = req.params.id;
   try {
-    const result = await vehicleService.getSingleVehicle(id!);
+    const result = await vehicleService.getSingleVehicle(id as string);
     if (result.rows.length === 0) {
       res.send({
         success: false,
@@ -61,7 +61,7 @@ const getSingleVehicle = async (req: Request, res: Response) => {
 const updateVehicle = async (req: Request, res: Response) => {
   const id = req.params.id;
   try {
-    const result = await vehicleService.updateVehicle(req.body, id!);
+    const result = await vehicleService.updateVehicle(req.body, id as string);
     if (result.rowCount === 0) {
       res.status(404).send({
         success: false,
@@ -85,8 +85,13 @@ const updateVehicle = async (req: Request, res: Response) => {
 const deleteVehicle = async (req: Request, res: Response) => {
   const { id } = req.params;
   try {
-    const result = await vehicleService.deleteVehicle(id!);
-    if (result.rowCount === 0) {
+    const result = await vehicleService.deleteVehicle(id as string);
+    if(result === null){
+      res.status(403).send({
+        success:false,
+        message:"Vehicle not deleted vehicle is booked"
+      })
+    }else if (result.rowCount === 0) {
       res.status(404).send({
         success: false,
         message: "user not found",

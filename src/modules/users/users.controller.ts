@@ -20,7 +20,7 @@ const getAllUser = async (req: Request, res: Response) => {
 const updateUser = async (req: Request, res: Response) => {
   const id = req.params.id;
   try {
-    const result = await userService.updateUser(req.body, id!);
+    const result = await userService.updateUser(req.body, id as string);
     if (result.rowCount === 0) {
       res.status(404).send({
         success: false,
@@ -41,31 +41,36 @@ const updateUser = async (req: Request, res: Response) => {
   }
 };
 
-const deleteUser = async(req:Request,res:Response) =>{
-    const id = req.params.id;
-    try {
-        const result = await userService.deleteUser(id!);
-        if(result.rowCount ===0){
-            res.status(404).send({
-                success:false,
-                message:"user not found"
-            })
-        } else{
-            res.status(200).send({
-                success:true,
-                message:"User deleted successfully"
-            })
-        }
-    } catch (err:any) {
-        res.status(500).send({
-            success:false,
-            message:err.message
-        })
+const deleteUser = async (req: Request, res: Response) => {
+  const id = req.params.id;
+  try {
+    const result = await userService.deleteUser(id as string);
+    if (result === null) {
+      res.status(403).send({
+        success: false,
+        message: "User not deleted user booked a vehicle",
+      });
+    } else if (result.rowCount === 0) {
+      res.status(404).send({
+        success: false,
+        message: "user not found",
+      });
+    } else {
+      res.status(200).send({
+        success: true,
+        message: "User deleted successfully",
+      });
     }
-}
+  } catch (err: any) {
+    res.status(500).send({
+      success: false,
+      message: err.message,
+    });
+  }
+};
 
 export const userController = {
   getAllUser,
   updateUser,
-  deleteUser
+  deleteUser,
 };

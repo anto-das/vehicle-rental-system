@@ -1,4 +1,5 @@
 import { pool } from "../../config/db";
+import { bookingService } from "../bookings/booking.service";
 
 const getAllUser = async () => {
   const result = await pool.query(`SELECT * FROM users`);
@@ -33,9 +34,11 @@ const updateUser = async (payload: Record<string, unknown>, id: string) => {
   const userRole = user.rows[0]?.role;
   if (role !== undefined) {
     fields.push(`role=$${idx++}`);
-    if (role !== userRole) {
-      values.push(userRole);
-    }
+  }
+  if (userRole !== "admin") {
+    values.push(userRole);
+  } else {
+    values.push(role);
   }
   values.push(id);
   const result = await pool.query(
@@ -45,13 +48,17 @@ const updateUser = async (payload: Record<string, unknown>, id: string) => {
   return result;
 };
 
-const deleteUser = async(id:string) =>{
-    const result = await pool.query(`DELETE FROM users WHERE id=$1`,[id])
-    return result;
-}
+const deleteUser = async (id: string) => {
+  const bookings = await bookingService.getSingleBookings(id);
+  if (bookings.rows.length > 0) {
+    return null;
+  }
+  const result = await pool.query(`DELETE FROM users WHERE id=$1`, [id]);
+  return result;
+};
 
 export const userService = {
   getAllUser,
   updateUser,
-  deleteUser
+  deleteUser,
 };
