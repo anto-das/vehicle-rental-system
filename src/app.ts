@@ -11,13 +11,22 @@ app.use(express.json());
 
 initDB();
 
-app.use("/v1/auth",authRouter);
+app.use("/v1/auth", authRouter);
 
-app.use("/v1/users",userRouter);
+app.use("/v1/users", userRouter);
 
-app.use("/v1/vehicles",vehicleRouter);
+app.use("/v1/vehicles", vehicleRouter);
 
-app.use("/v1/bookings",bookingRouter)
+app.use("/v1/bookings", bookingRouter);
+
+app.use((req: Request, res: Response) => {
+  res.status(404).send({
+    success: false,
+    message: "route not found",
+    method: req.method,
+    path: req.path,
+  });
+});
 
 app.get("/", (req: Request, res: Response) => {
   res.send("vehicle rental platform");

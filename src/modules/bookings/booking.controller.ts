@@ -24,7 +24,11 @@ const postBookings = async(req:Request,res:Response) =>{
     }
 }
 
+const getAllBookings = async(req:Request,res:Response) =>{
+    
+}
 
 export const bookingController ={
-    postBookings
+    postBookings,
+    getAllBookings
 }

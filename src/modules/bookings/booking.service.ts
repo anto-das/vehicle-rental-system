@@ -56,6 +56,8 @@ const getSingleBookings = async (id: string) => {
     return result;
 };
 
+// 1st step: query diye bookings gula niye ashbo then jei result ta ashbe oitar length jodi 1 theke boro hoy tah
+
 export const bookingService = {
   postBookings,
   getSingleBookings
