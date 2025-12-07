@@ -1,21 +1,9 @@
-// {
-//   id: 2,
-//   vehicle_name: 'Toyota Camry 2024',
-//   type: 'car',
-//   registration_number: 'ABC-1235',
-//   daily_rent_price: '50',
-//   availability_status: 'available'
-// }
-// {
-//   customer_id: 1,
-//   vehicle_id: 2,
-//   rent_start_date: '2024-01-15',
-//   rent_end_date: '2024-01-20'
-// }
 
+import { Request } from "express";
 import { pool } from "../../config/db";
 import numberOfDays from "../../utilities/number_of_days";
 import { vehicleService } from "../vehicles/vehicles.services";
+import { userService } from "../users/users.service";
 const postBookings = async (payload: any) => {
   const { customer_id, vehicle_id, rent_start_date, rent_end_date } = payload;
 
@@ -56,9 +44,49 @@ const getSingleBookings = async (id: string) => {
     return result;
 };
 
-// 1st step: query diye bookings gula niye ashbo then jei result ta ashbe oitar length jodi 1 theke boro hoy tah
+const getBookings = async(req:Request) =>{
+  const id = String(req.user?.id);
+  const userRole =req.user?.role;
+   const customers =await pool.query(`SELECT * FROM users`);
+  const vehicles = await vehicleService.getVehicles();
+  if(userRole !=="admin"){
+    const result = await getSingleBookings(id);
+    const {vehicle_id} =result.rows[0];
+    const {vehicle_name,registration_number,type} =vehicles.rows?.find(vehicle => vehicle.id === vehicle_id)
+    const getOwnBooking ={
+      ...result.rows[0],
+      vehicles:{
+        vehicle_name,
+        registration_number,
+        type
+      }
+    }
+    result.rows=[getOwnBooking]
+   return result
+  }
+  const result =await pool.query(`SELECT * FROM bookings`)
+  const finalResult = result.rows.map(bookedResult =>{
+    const {name,email} = customers.rows?.find(customer => customer.id === bookedResult.customer_id)
+    const {vehicle_name,registration_number} =vehicles.rows?.find(vehicle => vehicle.id === bookedResult.vehicle_id);
+    const adminResult ={
+      ...bookedResult,
+      customer:{
+        name,
+        email,
+      },
+      vehicle:{
+        vehicle_name,
+        registration_number,
+      }
+    }
+    return adminResult
+  })
+  result.rows =finalResult
+  return result;
+}
 
 export const bookingService = {
   postBookings,
-  getSingleBookings
+  getSingleBookings,
+  getBookings
 };

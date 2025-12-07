@@ -11,6 +11,9 @@ app.use(express.json());
 
 initDB();
 
+app.get("/", (req: Request, res: Response) => {
+  res.send("vehicle rental platform");
+});
 app.use("/v1/auth", authRouter);
 
 app.use("/v1/users", userRouter);
@@ -26,8 +29,4 @@ app.use((req: Request, res: Response) => {
     method: req.method,
     path: req.path,
   });
-});
-
-app.get("/", (req: Request, res: Response) => {
-  res.send("vehicle rental platform");
 });

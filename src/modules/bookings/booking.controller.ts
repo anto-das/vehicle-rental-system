@@ -25,10 +25,33 @@ const postBookings = async(req:Request,res:Response) =>{
 }
 
 const getAllBookings = async(req:Request,res:Response) =>{
-    //1=>controller theke req tak pathabo service 
-    // 2=>service req theke req.user ber kore ene tar role check dibo 
-    //  3=> erpor condition diye result controller eh pathabo jodi user admin hoy tahole all bookings return korbo r jodi customer hoy own bookings return korbo
-    // 
+    try {
+        const result = await bookingService.getBookings(req);
+         if(result.rowCount === 0){
+            res.status(404).send({
+                success:false,
+                message:"bookings not found"
+            })
+        } else if(result.rows.length === 1){
+            res.status(200).send({
+                success:true,
+                message:"Your bookings retrieved successfully",
+                data:result.rows
+            })
+        }
+        else{
+            res.status(200).send({
+                success:true,
+                message:"Bookings retrieved successfully",
+                data:result.rows
+            })
+        }
+    } catch (err:any) {
+        res.status(500).send({
+            success:false,
+            message:err.message
+        })
+    }
 }
 
 export const bookingController ={
