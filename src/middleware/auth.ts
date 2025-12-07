@@ -22,6 +22,7 @@ const auth = (...roles: string[]) => {
           success: false,
           message: "forbidden access",
         });
+        return
       }
       next();
     } catch (err: any) {

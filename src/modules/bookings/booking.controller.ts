@@ -26,12 +26,13 @@ const postBookings = async (req: Request, res: Response) => {
 };
 
 const getAllBookings = async (req: Request, res: Response) => {
+  const user = req.user;
   try {
-    const result = await bookingService.getBookings(req);
+    const result = await bookingService.getBookings(user as JwtPayload);
     if (result.rowCount === 0) {
       res.status(404).send({
         success: false,
-        message: "Vehicle not found",
+        message: "Booking not found",
       });
     } else if (result.rows.length === 1) {
       res.status(200).send({
@@ -88,6 +89,12 @@ const updateBookings = async (req: Request, res: Response) => {
     });
   }
 };
+
+// export const autoMark = async(req:Request,res:Response) =>{
+//   const userId = String(req.user?.id);
+//   // const result = await bookingService.autoMarked()
+//   console.log(userId)
+// }
 
 export const bookingController = {
   postBookings,

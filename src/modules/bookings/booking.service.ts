@@ -1,10 +1,7 @@
-
 import { Request } from "express";
 import { pool } from "../../config/db";
 import numberOfDays from "../../utilities/number_of_days";
 import { vehicleService } from "../vehicles/vehicles.services";
-import { userService } from "../users/users.service";
-import { Result } from "pg";
 const postBookings = async (payload: any) => {
   const { customer_id, vehicle_id, rent_start_date, rent_end_date } = payload;
   const number_of_days = numberOfDays(rent_start_date, rent_end_date);
@@ -40,91 +37,128 @@ const postBookings = async (payload: any) => {
 };
 
 const getSingleBookings = async (id: string) => {
-  const result = await pool.query(`
-    SELECT * FROM bookings WHERE customer_id=$1`,[id]);
-    return result;
+  const result = await pool.query(
+    `
+    SELECT * FROM bookings WHERE customer_id=$1`,
+    [id]
+  );
+  return result;
 };
 
-const getBookings = async(req:Request) =>{
-  const id = String(req.user?.id);
-  const userRole =req.user?.role;
+const getBookings = async (user: Record<string, unknown>) => {
+  const id = String(user?.id);
+  const userRole = user?.role;
   // all users and vehicles from database
-   const customers =await pool.query(`SELECT * FROM users`);
+  const customers = await pool.query(`SELECT * FROM users`);
   const vehicles = await vehicleService.getVehicles();
-  // condition if user is customer 
-  if(userRole !=="admin"){
+  // condition if user is customer
+  if (userRole !== "admin") {
     const result = await getSingleBookings(id);
-    const {vehicle_id} =result.rows[0];
-    const {vehicle_name,registration_number,type} =vehicles.rows?.find(vehicle => vehicle.id === vehicle_id)
-    const getOwnBooking ={
+    const { vehicle_id } = result.rows[0];
+    const { vehicle_name, registration_number, type } = vehicles.rows?.find(
+      (vehicle) => vehicle.id === vehicle_id
+    );
+    const getOwnBooking = {
       ...result.rows[0],
-      vehicles:{
+      vehicles: {
         vehicle_name,
         registration_number,
-        type
-      }
-    }
-    result.rows=[getOwnBooking]
-   return result
+        type,
+      },
+    };
+    result.rows = [getOwnBooking];
+    autoMarked(id)
+    return result;
   }
-  // if user is admin 
-  const result =await pool.query(`SELECT * FROM bookings`)
-  const finalResult = result.rows.map(bookedResult =>{
-    const {name,email} = customers.rows?.find(customer => customer.id === bookedResult.customer_id)
-    const {vehicle_name,registration_number} =vehicles.rows?.find(vehicle => vehicle.id === bookedResult.vehicle_id);
-    const adminResult ={
+  // if user is admin
+  const result = await pool.query(`SELECT * FROM bookings`);
+  const finalResult = result.rows.map((bookedResult) => {
+    const { name, email } = customers.rows?.find(
+      (customer) => customer.id === bookedResult.customer_id
+    );
+    const { vehicle_name, registration_number } = vehicles.rows?.find(
+      (vehicle) => vehicle.id === bookedResult.vehicle_id
+    );
+    const adminResult = {
       ...bookedResult,
-      customer:{
+      customer: {
         name,
         email,
       },
-      vehicle:{
+      vehicle: {
         vehicle_name,
         registration_number,
-      }
-    }
-    return adminResult
-  })
-  result.rows =finalResult
+      },
+    };
+    return adminResult;
+  });
+  result.rows = finalResult;
+  autoMarked(id)
   return result;
-}
+};
 
-const updateBookings = async(payload:Record<string,unknown>,user:Record<string,unknown>,id:string) =>{
+const updateBookings = async (
+  payload: Record<string, unknown>,
+  user: Record<string, unknown>,
+  id: string
+) => {
   const status = payload.status;
   // get booking where id is equal user given id
-  const bookingData = await pool.query(`SELECT * FROM bookings WHERE id=$1`,[id]);
+  const bookingData = await pool.query(`SELECT * FROM bookings WHERE id=$1`, [
+    id,
+  ]);
   // check admin and status
-  if(user.role !=="admin" && status ==="returned"){
-    return null
+  if (user.role !== "admin" && status === "returned") {
+    return null;
   }
-  if(bookingData.rowCount === 0){
-    return bookingData
+  if (bookingData.rowCount === 0) {
+    return bookingData;
   }
   // d'structuring booking data get date
-  const {rent_start_date,status:bookedStatus} =bookingData.rows[0];
+  const { rent_start_date, status: bookedStatus } = bookingData.rows[0];
   const today = new Date();
-  if(today >= rent_start_date && bookedStatus ==="active"){
-    return false
+  if (today >= rent_start_date && bookedStatus === "active") {
+    return false;
   }
   //set update bookings
-  const result = await pool.query(`UPDATE bookings SET status=$1 WHERE id=$2 RETURNING *`,[status,id])
-  const {vehicle_id} =bookingData.rows[0];
-  const availability_status = bookedStatus ==="active" ? "booked" :"available";
+  const result = await pool.query(
+    `UPDATE bookings SET status=$1 WHERE id=$2 RETURNING *`,
+    [status, id]
+  );
+  const { vehicle_id } = bookingData.rows[0];
+  const availability_status =bookedStatus === "active" ? "booked" : "available";
   //update vehicle status
-  const updateVehicle = await pool.query(`UPDATE vehicles SET availability_status=$1 WHERE id=$2 RETURNING *`,[availability_status,vehicle_id])
-  if(user.role ==="admin" && status ==="returned"){
-    const updateResult ={
+  const updateVehicle = await pool.query(
+    `UPDATE vehicles SET availability_status=$1 WHERE id=$2 RETURNING *`,
+    [availability_status, vehicle_id]
+  );
+  if (user.role === "admin" && status === "returned") {
+    const updateResult = {
       ...result.rows[0],
-      vehicle:{availability_status:updateVehicle.rows[0]?.availability_status}
-    }
-    result.rows[0]=updateResult
+      vehicle: {
+        availability_status: updateVehicle.rows[0]?.availability_status,
+      },
+    };
+    result.rows[0] = updateResult;
   }
   return result;
+};
+
+const autoMarked = async(id:string) =>{
+  const today = new Date();
+  const getSingleBooked = await getSingleBookings(id);
+  const {rent_end_date,vehicle_id} =getSingleBooked.rows[0];
+  if(rent_end_date < today){
+     await pool.query(`UPDATE bookings SET status=$1 WHERE customer_id=$2`,["returned",id])
+     await pool.query(`UPDATE vehicles SET availability_status=$1 WHERE id=$2`,["available",vehicle_id])
+  }
+  
 }
 
 export const bookingService = {
   postBookings,
   getSingleBookings,
   getBookings,
-  updateBookings
+  updateBookings,
+  autoMarked
 };
