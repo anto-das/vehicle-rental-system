@@ -59,15 +59,20 @@ const updateBookings = async (req: Request, res: Response) => {
   const user =req.user;
   try {
     const result = await bookingService.updateBookings(req.body,user as JwtPayload,id as string);
-    if(result === false){
-         res.status(400).send({
+   if( result ===null){
+    res.status(403).send({
+      success:false,
+      message:"Sorry! You can't change status"
+    })
+   }else if(result === false){
+         res.status(403).send({
             success:false,
             message:"Sorry! You can't cancelled your booking"
         })
     }else if(result.rowCount === 0){
        res.status(404).send({
             success:false,
-            message:"Vehicle not found"
+            message:"Booking not found"
         })
     }else{
         res.status(200).send({
