@@ -49,7 +49,6 @@ const updateUser = async (
   } else {
     values.push(id);
   }
-  console.log(values, fields);
   const result = await pool.query(
     `UPDATE users SET ${fields.join(", ")} WHERE id=$${idx} RETURNING *`,
     values

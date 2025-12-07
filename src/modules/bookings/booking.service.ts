@@ -37,11 +37,9 @@ const postBookings = async (payload: any) => {
 };
 
 const getSingleBookings = async (id: string) => {
-  const result = await pool.query(
-    `
+  const result = await pool.query( `
     SELECT * FROM bookings WHERE customer_id=$1`,
-    [id]
-  );
+    [id]);
   return result;
 };
 
@@ -147,7 +145,7 @@ const updateBookings = async (
 const autoMarked = async(id:string) =>{
   const today = new Date();
   const getSingleBooked = await getSingleBookings(id);
-  const {rent_end_date,vehicle_id} =getSingleBooked.rows[0];
+  const {rent_end_date,vehicle_id} =getSingleBooked?.rows[0];
   if(rent_end_date < today){
      await pool.query(`UPDATE bookings SET status=$1 WHERE customer_id=$2`,["returned",id])
      await pool.query(`UPDATE vehicles SET availability_status=$1 WHERE id=$2`,["available",vehicle_id])
