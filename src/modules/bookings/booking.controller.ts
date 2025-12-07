@@ -1,60 +1,91 @@
 import { Request, Response } from "express";
 import { bookingService } from "./booking.service";
+import { JwtPayload } from "jsonwebtoken";
 
-const postBookings = async(req:Request,res:Response) =>{
-    try {
-        const result =await bookingService.postBookings(req.body);
-        if(!result){
-            res.status(404).send({
-                success:false,
-                message:"vehicle not found"
-            })
-        } else{
-            res.status(201).send({
+const postBookings = async (req: Request, res: Response) => {
+  try {
+    const result = await bookingService.postBookings(req.body);
+    if (!result) {
+      res.status(404).send({
+        success: false,
+        message: "vehicle not found",
+      });
+    } else {
+      res.status(201).send({
+        success: true,
+        message: "Booking created successfully",
+        data: result,
+      });
+    }
+  } catch (err: any) {
+    res.status(500).send({
+      success: false,
+      message: err.message,
+    });
+  }
+};
+
+const getAllBookings = async (req: Request, res: Response) => {
+  try {
+    const result = await bookingService.getBookings(req);
+    if (result.rowCount === 0) {
+      res.status(404).send({
+        success: false,
+        message: "Vehicle not found",
+      });
+    } else if (result.rows.length === 1) {
+      res.status(200).send({
+        success: true,
+        message: "Your bookings retrieved successfully",
+        data: result.rows,
+      });
+    } else {
+      res.status(200).send({
+        success: true,
+        message: "Bookings retrieved successfully",
+        data: result.rows,
+      });
+    }
+  } catch (err: any) {
+    res.status(500).send({
+      success: false,
+      message: err.message,
+    });
+  }
+};
+
+const updateBookings = async (req: Request, res: Response) => {
+  const id = req.params.id;
+  const user =req.user;
+  try {
+    const result = await bookingService.updateBookings(req.body,user as JwtPayload,id as string);
+    if(result === false){
+         res.status(400).send({
+            success:false,
+            message:"Sorry! You can't cancelled your booking"
+        })
+    }else if(result.rowCount === 0){
+       res.status(404).send({
+            success:false,
+            message:"Vehicle not found"
+        })
+    }else{
+        res.status(200).send({
             success:true,
-            message:"Booking created successfully",
-            data:result
-        })
-        }
-    } catch (err:any) {
-        res.status(500).send({
-            success:false,
-            message:err.message
+            message:"Booking cancelled successfully",
+            data:result?.rows[0]
         })
     }
-}
+  } catch (err: any) {
+    res.status(500).send({
+      success: false,
+      message:err.message
+    });
+  }
+};
 
-const getAllBookings = async(req:Request,res:Response) =>{
-    try {
-        const result = await bookingService.getBookings(req);
-         if(result.rowCount === 0){
-            res.status(404).send({
-                success:false,
-                message:"bookings not found"
-            })
-        } else if(result.rows.length === 1){
-            res.status(200).send({
-                success:true,
-                message:"Your bookings retrieved successfully",
-                data:result.rows
-            })
-        }
-        else{
-            res.status(200).send({
-                success:true,
-                message:"Bookings retrieved successfully",
-                data:result.rows
-            })
-        }
-    } catch (err:any) {
-        res.status(500).send({
-            success:false,
-            message:err.message
-        })
-    }
-}
-
-export const bookingController ={
-    postBookings,
-    getAllBookings
-}
+export const bookingController = {
+  postBookings,
+  getAllBookings,
+  updateBookings,
+};

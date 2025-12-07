@@ -19,8 +19,10 @@ const getAllUser = async (req: Request, res: Response) => {
 
 const updateUser = async (req: Request, res: Response) => {
   const id = req.params.id;
+  const role =req.user?.role;
+  const userId =req.user?.id;
   try {
-    const result = await userService.updateUser(req.body, id as string);
+    const result = await userService.updateUser(req.body, role,id as string,userId);
     if (result === null) {
       res.status(401).send({
         success: false,

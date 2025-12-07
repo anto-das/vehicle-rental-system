@@ -4,6 +4,7 @@ import { pool } from "../../config/db";
 import numberOfDays from "../../utilities/number_of_days";
 import { vehicleService } from "../vehicles/vehicles.services";
 import { userService } from "../users/users.service";
+import { Result } from "pg";
 const postBookings = async (payload: any) => {
   const { customer_id, vehicle_id, rent_start_date, rent_end_date } = payload;
 
@@ -85,8 +86,27 @@ const getBookings = async(req:Request) =>{
   return result;
 }
 
+const updateBookings = async(payload:Record<string,unknown>,user:Record<string,unknown>,id:string) =>{
+  const status = payload.status;
+  const bookingData = await pool.query(`SELECT * FROM bookings WHERE id=$1`,[id]);
+  if(bookingData.rowCount === 0){
+    return bookingData
+  }
+  const {rent_start_date,status:bookedStatus} =bookingData.rows[0];
+  const today = new Date();
+  if(today >= rent_start_date && bookedStatus ==="active"){
+    return false
+  }
+  const result = await pool.query(`UPDATE bookings SET status=$1 WHERE id=$2 RETURNING *`,[status,id])
+  const {vehicle_id} =bookingData.rows[0];
+  const availability_status = bookedStatus ==="active" ? "booked" :"available";
+  // const updateVehicle = await vehicleService.updateVehicle({availability_status:availability_status},id)
+  return result;
+}
+
 export const bookingService = {
   postBookings,
   getSingleBookings,
-  getBookings
+  getBookings,
+  updateBookings
 };
