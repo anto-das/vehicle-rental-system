@@ -4,11 +4,18 @@ import { authService } from "./auth.service";
 const signUpUser = async (req: Request, res: Response) => {
   try {
     const result = await authService.signUpUser(req.body);
-    res.status(201).send({
-      success: true,
-      message: "User registered successfully",
-      data: result.rows[0],
-    });
+    if (result === null) {
+      res.status(400).send({
+        success: false,
+        message: "Password must be at least 6 character or long",
+      });
+    } else {
+      res.status(201).send({
+        success: true,
+        message: "User registered successfully",
+        data: result.rows[0],
+      });
+    }
   } catch (err: any) {
     res.status(500).send({
       success: false,
@@ -35,7 +42,7 @@ const signInUser = async (req: Request, res: Response) => {
       res.status(200).send({
         success: true,
         message: "login successful",
-        data:result
+        data: result,
       });
     }
   } catch (err: any) {

@@ -3,9 +3,15 @@ import { bookingService } from "./booking.service";
 import { JwtPayload } from "jsonwebtoken";
 
 const postBookings = async (req: Request, res: Response) => {
+  const userId = String(req.user?.id);
   try {
-    const result = await bookingService.postBookings(req.body);
-    if (!result) {
+    const result = await bookingService.postBookings(req.body,userId);
+  if(result === false){
+    res.status(403).send({
+      success:false,
+      message:"you can't booked please give your customer id"
+    })
+  } else if (result===null) {
       res.status(404).send({
         success: false,
         message: "vehicle not found",
@@ -90,11 +96,7 @@ const updateBookings = async (req: Request, res: Response) => {
   }
 };
 
-// export const autoMark = async(req:Request,res:Response) =>{
-//   const userId = String(req.user?.id);
-//   // const result = await bookingService.autoMarked()
-//   console.log(userId)
-// }
+
 
 export const bookingController = {
   postBookings,

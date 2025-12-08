@@ -2,9 +2,13 @@ import { Request } from "express";
 import { pool } from "../../config/db";
 import numberOfDays from "../../utilities/number_of_days";
 import { vehicleService } from "../vehicles/vehicles.services";
-const postBookings = async (payload: any) => {
+const postBookings = async (payload: any, userId: string) => {
   const { customer_id, vehicle_id, rent_start_date, rent_end_date } = payload;
   const number_of_days = numberOfDays(rent_start_date, rent_end_date);
+  //check login user id and given customer
+  if (String(customer_id) !== userId) {
+    return false;
+  }
   // find out single vehicle using vehicle_id
   const getSingleVehicle = await vehicleService.getSingleVehicle(vehicle_id);
   if (getSingleVehicle.rows[0] === undefined) {
@@ -37,9 +41,11 @@ const postBookings = async (payload: any) => {
 };
 
 const getSingleBookings = async (id: string) => {
-  const result = await pool.query( `
+  const result = await pool.query(
+    `
     SELECT * FROM bookings WHERE customer_id=$1`,
-    [id]);
+    [id]
+  );
   return result;
 };
 
@@ -65,7 +71,7 @@ const getBookings = async (user: Record<string, unknown>) => {
       },
     };
     result.rows = [getOwnBooking];
-    autoMarked(id)
+    autoMarked(id);
     return result;
   }
   // if user is admin
@@ -91,7 +97,7 @@ const getBookings = async (user: Record<string, unknown>) => {
     return adminResult;
   });
   result.rows = finalResult;
-  autoMarked(id)
+  autoMarked(id);
   return result;
 };
 
@@ -105,6 +111,15 @@ const updateBookings = async (
   const bookingData = await pool.query(`SELECT * FROM bookings WHERE id=$1`, [
     id,
   ]);
+  const {
+    customer_id,
+    rent_start_date,
+    status: bookedStatus,
+  } = bookingData.rows[0];
+  //check customer id and user
+  if (user.role === "customer" && String(user.id) !== String(customer_id)) {
+    return null;
+  }
   // check admin and status
   if (user.role !== "admin" && status === "returned") {
     return null;
@@ -113,7 +128,7 @@ const updateBookings = async (
     return bookingData;
   }
   // d'structuring booking data get date
-  const { rent_start_date, status: bookedStatus } = bookingData.rows[0];
+
   const today = new Date();
   if (today >= rent_start_date && bookedStatus === "active") {
     return false;
@@ -124,7 +139,8 @@ const updateBookings = async (
     [status, id]
   );
   const { vehicle_id } = bookingData.rows[0];
-  const availability_status =bookedStatus === "active" ? "booked" : "available";
+  const availability_status =
+    bookedStatus === "active" ? "booked" : "available";
   //update vehicle status
   const updateVehicle = await pool.query(
     `UPDATE vehicles SET availability_status=$1 WHERE id=$2 RETURNING *`,
@@ -142,21 +158,26 @@ const updateBookings = async (
   return result;
 };
 
-const autoMarked = async(id:string) =>{
+const autoMarked = async (id: string) => {
   const today = new Date();
   const getSingleBooked = await getSingleBookings(id);
-  const {rent_end_date,vehicle_id} =getSingleBooked?.rows[0];
-  if(rent_end_date < today){
-     await pool.query(`UPDATE bookings SET status=$1 WHERE customer_id=$2`,["returned",id])
-     await pool.query(`UPDATE vehicles SET availability_status=$1 WHERE id=$2`,["available",vehicle_id])
+  const { rent_end_date, vehicle_id } = getSingleBooked?.rows[0];
+  if (rent_end_date < today) {
+    await pool.query(`UPDATE bookings SET status=$1 WHERE customer_id=$2`, [
+      "returned",
+      id,
+    ]);
+    await pool.query(`UPDATE vehicles SET availability_status=$1 WHERE id=$2`, [
+      "available",
+      vehicle_id,
+    ]);
   }
-  
-}
+};
 
 export const bookingService = {
   postBookings,
   getSingleBookings,
   getBookings,
   updateBookings,
-  autoMarked
+  autoMarked,
 };
