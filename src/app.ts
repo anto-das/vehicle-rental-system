@@ -14,13 +14,13 @@ initDB();
 app.get("/", (req: Request, res: Response) => {
   res.send("vehicle rental platform");
 });
-app.use("/v1/auth", authRouter);
+app.use("/api/v1/auth", authRouter);
 
-app.use("/v1/users", userRouter);
+app.use("/api/v1/users", userRouter);
 
-app.use("/v1/vehicles", vehicleRouter);
+app.use("/api/v1/vehicles", vehicleRouter);
 
-app.use("/v1/bookings", bookingRouter);
+app.use("/api/v1/bookings", bookingRouter);
 
 app.use((req: Request, res: Response) => {
   res.status(404).send({
