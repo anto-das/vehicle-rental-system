@@ -3,6 +3,18 @@ import { vehicleController } from "./vehicles.controller";
 import auth from "../../middleware/auth";
 
 
+/**
+ * @swagger
+ * /vehicles:
+ *   get:
+ *     summary: Get all vehicles
+ *     tags:
+ *       - Vehicles
+ *     responses:
+ *       200:
+ *         description: Vehicles retrieved successfully
+ */
+
 const router = Router();
 router.post("/", auth("admin"), vehicleController.postVehicles);
 router.get("/", vehicleController.getVehicles);

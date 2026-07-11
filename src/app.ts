@@ -4,6 +4,8 @@ import { vehicleRouter } from "./modules/vehicles/vehicles.routes";
 import { authRouter } from "./modules/authentication/auth.routes";
 import { userRouter } from "./modules/users/users.routes";
 import { bookingRouter } from "./modules/bookings/booking.routes";
+import { swaggerSpec } from "./config/swagger";
+import swaggerUi from "swagger-ui-express";
 export const app = express();
 
 // middle ware
@@ -14,6 +16,7 @@ initDB();
 app.get("/", (req: Request, res: Response) => {
   res.send("vehicle rental platform");
 });
+app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 app.use("/api/v1/auth", authRouter);
 
 app.use("/api/v1/users", userRouter);
